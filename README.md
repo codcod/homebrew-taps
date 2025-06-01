@@ -8,7 +8,7 @@ a timeline for a JIRA Epic in a tabular format.
 
 ## Formulae
 
-The formulae are defined in [Repos.rb](Repos.rb) and [timeline.rb](timeline.rb).
+The formulae are defined in [repos.rb](repos.rb) and [timeline.rb](timeline.rb).
 
 ## Installation
 
