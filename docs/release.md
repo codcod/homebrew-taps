@@ -24,7 +24,7 @@ To verify if formula is correct before submitting:
 1. Check the formula syntax:
 
 ```bash
-brew audit --new --formula --tap codcod/taps
+brew audit --formula --strict --tap codcod/taps
 ```
 
 2. Install the formula locally:
