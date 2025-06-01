@@ -10,3 +10,37 @@ shasum -a 256 ~/Downloads/repos-<version>.tar.gz
 ```
 
 Copy the output to the sha256 field in Repos.rb.
+
+Update resources in `rb` file:
+
+```bash
+brew update-python-resources --print-only ./formula.rb
+```
+
+## Verify
+
+To verify if formula is correct before submitting:
+
+1. Check the formula syntax:
+
+```bash
+brew audit --new --formula --tap codcod/taps
+```
+
+2. Install the formula locally:
+
+```bash
+brew install --formula --build-from-source ./formula.rb
+```
+
+3. Test the installed tool:
+
+```bash
+formula --help
+```
+
+4. Uninstall after testing
+
+```bash
+brew uninstall formula
+```
