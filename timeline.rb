@@ -2,8 +2,8 @@ class Timeline < Formula
   include Language::Python::Virtualenv
   desc "Timeline of a JIRA Epic based on its issues"
   homepage "https://github.com/codcod/jira-epic-timeline"
-  url "https://github.com/codcod/jira-epic-timeline/archive/refs/tags/v0.1.2.tar.gz"
-  sha256 "8696552a5de4025f931754fc6a95a874e14752657ce975ddefaf5f2ec0c2dded"
+  url "https://github.com/codcod/jira-epic-timeline/archive/refs/tags/v2.0.0.tar.gz"
+  sha256 "5d0d0053329d3a87fe9c17cd215b336e4b6177aece83c2a326af2087c313900c"
   license "MIT"
 
   depends_on "python@3.13"
