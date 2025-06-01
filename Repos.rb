@@ -2,7 +2,7 @@
 # - update version number in "url"
 # - run: "shasum -a 256 ~/Downloads/repos-1.0.x.tar.gz" and copy output to "sha256"
 
-class Repos < Formula
+class repos < Formula
   desc "Clone multiple GitHub repositories and run arbitrary commands inside them."
   homepage "https://github.com/codcod/repos"
   url "https://github.com/codcod/repos/archive/refs/tags/v0.0.3.tar.gz"
