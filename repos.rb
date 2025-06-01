@@ -1,7 +1,3 @@
-# After a new release of repos:
-# - update version number in "url"
-# - run: "shasum -a 256 ~/Downloads/repos-1.0.x.tar.gz" and copy output to "sha256"
-
 class Repos < Formula
   desc "Clone multiple GitHub repositories and run arbitrary commands inside them."
   homepage "https://github.com/codcod/repos"
