@@ -1,8 +1,8 @@
 class Repos < Formula
   desc "Clone multiple GitHub repositories and run arbitrary commands inside them."
   homepage "https://github.com/codcod/repos"
-  url "https://github.com/codcod/repos/archive/refs/tags/v1.2.1.tar.gz"
-  sha256 "ccfee127b6d9594ef8c2f45bdf5504e424d0d31a4bfde46b008f2d55907befe8"
+  url "https://github.com/codcod/repos/archive/refs/tags/v1.2.2.tar.gz"
+  sha256 "402c1c2ae1f8815bae4e4d7bb9343b86db7170271d8ce8b2d34adc6f12a049d6"
   license "MIT" # or whatever license you use
 
   depends_on "go" => :build
