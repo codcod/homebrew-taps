@@ -8,10 +8,13 @@ class Repos < Formula
   depends_on "go" => :build
 
   def install
-    system "go", "build", "-o", bin/"repos", "./cmd/repos"
+    # Build with version information
+    ldflags = "-X main.version=#{version} -X main.commit=homebrew -X main.date=#{Time.now.strftime('%Y-%m-%d')}"
+
+    system "go", "build", "-ldflags", ldflags, "-o", bin/"repos", "./cmd/repos"
   end
 
   test do
-    system "bin/repos", "--version"
+    system "bin/repos", "version"
   end
 end
