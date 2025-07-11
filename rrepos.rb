@@ -1,4 +1,4 @@
-class Repos < Formula
+class Rrepos < Formula
   desc "Clone multiple GitHub repositories and run arbitrary commands inside them."
   homepage "https://github.com/codcod/rrepos"
   url "https://github.com/codcod/rrepos/archive/refs/tags/0.1.0.tar.gz"
@@ -18,6 +18,6 @@ class Repos < Formula
   end
 
   test do
-    system "bin/repos", "version"
+    system "bin/rrepos", "--version"
   end
 end
