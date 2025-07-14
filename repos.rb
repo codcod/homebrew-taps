@@ -1,20 +1,23 @@
 class Repos < Formula
   desc "Clone multiple GitHub repositories and run arbitrary commands inside them."
   homepage "https://github.com/codcod/repos"
-  url "https://github.com/codcod/repos/archive/refs/tags/v1.3.0.tar.gz"
-  sha256 "4c1b686855d4c2df70b1f7d76b52c2f1f67769dce60cc59024f9a3d20b1fa3ef"
+  url "https://github.com/codcod/repos/archive/refs/tags/0.0.1.tar.gz"
+  sha256 "a9482310cc9a8127e46a6673521cd70ab2698161c42a9648631f0fce1e00ba4f"
   license "MIT" # or whatever license you use
 
-  depends_on "go" => :build
+  depends_on "rust" => :build
 
   def install
     # Build with version information
-    ldflags = "-X main.version=#{version} -X main.commit=homebrew -X main.date=#{Time.now.strftime('%Y-%m-%d')}"
+    ENV["REPOS_VERSION"] = version.to_s
+    ENV["REPOS_COMMIT"] = "homebrew"
+    ENV["REPOS_DATE"] = Time.now.strftime('%Y-%m-%d')
 
-    system "go", "build", "-ldflags", ldflags, "-o", bin/"repos", "./cmd/repos"
+    system "cargo", "build", "--release"
+    bin.install "target/release/repos"
   end
 
   test do
-    system "bin/repos", "version"
+    system "bin/repos", "--version"
   end
 end
