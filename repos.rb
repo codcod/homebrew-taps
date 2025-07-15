@@ -1,7 +1,7 @@
 class Repos < Formula
   desc "Clone multiple GitHub repositories and run arbitrary commands inside them."
   homepage "https://github.com/codcod/repos"
-  url "https://github.com/codcod/repos/archive/refs/tags/0.0.1.tar.gz"
+  url "https://github.com/codcod/repos/archive/refs/tags/v0.0.1.tar.gz"
   sha256 "a9482310cc9a8127e46a6673521cd70ab2698161c42a9648631f0fce1e00ba4f"
   license "MIT" # or whatever license you use
 
