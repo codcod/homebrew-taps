@@ -1,4 +1,4 @@
-## Release
+# Release
 
 After a new release of `repos`:
 
@@ -23,24 +23,24 @@ To verify if formula is correct before submitting:
 
 1. Check the formula syntax:
 
-```bash
-brew audit --formula --strict --tap codcod/taps
-```
+    ```bash
+    brew audit --formula --strict --tap codcod/taps
+    ```
 
-2. Install the formula locally:
+1. Install the formula locally:
 
-```bash
-brew install --formula --build-from-source ./formula.rb
-```
+    ```bash
+    brew install --formula --build-from-source ./formula.rb
+    ```
 
-3. Test the installed tool:
+1. Test the installed tool:
 
-```bash
-formula --help
-```
+    ```bash
+    formula --help
+    ```
 
-4. Uninstall after testing
+1. Uninstall after testing
 
-```bash
-brew uninstall formula
-```
+    ```bash
+    brew uninstall formula
+    ```
