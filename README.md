@@ -1,6 +1,7 @@
 # Homebrew Tap
 
 This repository provides Homebrew formulae for installing:
+
 * [`repos`](https://github.com/codcod/repos), a tool to clone multiple GitHub
 repositories and run arbitrary commands inside them,
 * [`timeline`](https://github.com/codcod/jira-epic-timeline), a tool to display
