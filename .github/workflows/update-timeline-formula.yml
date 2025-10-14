@@ -1,0 +1,114 @@
+name: Update Timeline Formula
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v0.2.2)'
+        required: true
+        type: string
+
+jobs:
+  update-formula:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.13'
+
+      - name: Install Homebrew
+        run: |
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.bashrc
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+
+      - name: Download and calculate main SHA256
+        id: calculate-sha
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          URL="https://github.com/codcod/jira-epic-timeline/archive/refs/tags/${VERSION}.tar.gz"
+          
+          echo "Downloading ${URL}"
+          curl -L "${URL}" -o timeline.tar.gz
+          
+          SHA256=$(shasum -a 256 timeline.tar.gz | cut -d' ' -f1)
+          echo "SHA256: ${SHA256}"
+          
+          echo "url=${URL}" >> $GITHUB_OUTPUT
+          echo "sha256=${SHA256}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Update main URL and SHA256 in timeline.rb
+        run: |
+          URL="${{ steps.calculate-sha.outputs.url }}"
+          SHA256="${{ steps.calculate-sha.outputs.sha256 }}"
+          VERSION="${{ steps.calculate-sha.outputs.version }}"
+          
+          # Update the URL line
+          sed -i "s|url \".*\"|url \"${URL}\"|" timeline.rb
+          
+          # Update the SHA256 line  
+          sed -i "s|sha256 \".*\"|sha256 \"${SHA256}\"|" timeline.rb
+          
+          echo "Updated timeline.rb main URL and SHA256"
+          echo "  URL: ${URL}"
+          echo "  SHA256: ${SHA256}"
+
+      - name: Update Python resources
+        run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          
+          # Install homebrew-core to get the update-python-resources command
+          brew tap homebrew/core
+          
+          # Generate updated resources and save to temporary file
+          echo "Updating Python resources..."
+          brew update-python-resources --print-only ./timeline.rb > resources_update.txt
+          
+          # The update-python-resources command outputs the entire formula with updated resources
+          # We need to replace the current formula with the updated one
+          if [ -s resources_update.txt ]; then
+            cp resources_update.txt timeline.rb
+            echo "Python resources updated successfully"
+          else
+            echo "Warning: No resource updates generated"
+          fi
+
+      - name: Verify formula syntax
+        run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          
+          # Audit the formula
+          echo "Auditing formula syntax..."
+          brew audit --strict --formula ./timeline.rb
+
+      - name: Show changes
+        run: |
+          echo "=== Changes made to timeline.rb ==="
+          git diff timeline.rb || echo "No changes detected"
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Update Timeline formula to ${{ steps.calculate-sha.outputs.version }}"
+          title: "Update Timeline formula to ${{ steps.calculate-sha.outputs.version }}"
+          body: |
+            This PR updates the Timeline formula to version `${{ steps.calculate-sha.outputs.version }}`.
+            
+            Changes:
+            - Updated main URL to: `${{ steps.calculate-sha.outputs.url }}`
+            - Updated main SHA256 to: `${{ steps.calculate-sha.outputs.sha256 }}`
+            - Updated Python resources with latest versions and checksums
+            
+            The formula has been validated with `brew audit`.
+            
+            **Please review the resource updates carefully before merging.**
+          branch: update-timeline-${{ steps.calculate-sha.outputs.version }}
+          delete-branch: true
