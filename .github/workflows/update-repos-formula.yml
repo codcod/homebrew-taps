@@ -1,0 +1,77 @@
+name: Update Repos Formula
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v0.0.6)'
+        required: true
+        type: string
+
+jobs:
+  update-formula:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download and calculate SHA256
+        id: calculate-sha
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          URL="https://github.com/codcod/repos/releases/download/${VERSION}/repos-${VERSION}-universal-apple-darwin.tar.gz"
+          
+          echo "Downloading ${URL}"
+          curl -L "${URL}" -o repos.tar.gz
+          
+          SHA256=$(shasum -a 256 repos.tar.gz | cut -d' ' -f1)
+          echo "SHA256: ${SHA256}"
+          
+          echo "url=${URL}" >> $GITHUB_OUTPUT
+          echo "sha256=${SHA256}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Update Repos.rb formula
+        run: |
+          URL="${{ steps.calculate-sha.outputs.url }}"
+          SHA256="${{ steps.calculate-sha.outputs.sha256 }}"
+          VERSION="${{ steps.calculate-sha.outputs.version }}"
+          
+          # Update the URL line
+          sed -i "s|url \".*\"|url \"${URL}\"|" Repos.rb
+          
+          # Update the SHA256 line
+          sed -i "s|sha256 \".*\"|sha256 \"${SHA256}\"|" Repos.rb
+          
+          echo "Updated Repos.rb with:"
+          echo "  URL: ${URL}"
+          echo "  SHA256: ${SHA256}"
+
+      - name: Verify formula syntax
+        run: |
+          # Install Homebrew for formula validation
+          /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+          echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.bashrc
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          
+          # Audit the formula
+          brew audit --strict --formula ./Repos.rb
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Update Repos formula to ${{ steps.calculate-sha.outputs.version }}"
+          title: "Update Repos formula to ${{ steps.calculate-sha.outputs.version }}"
+          body: |
+            This PR updates the Repos formula to version `${{ steps.calculate-sha.outputs.version }}`.
+            
+            Changes:
+            - Updated URL to: `${{ steps.calculate-sha.outputs.url }}`
+            - Updated SHA256 to: `${{ steps.calculate-sha.outputs.sha256 }}`
+            
+            The formula has been validated with `brew audit`.
+          branch: update-repos-${{ steps.calculate-sha.outputs.version }}
+          delete-branch: true
