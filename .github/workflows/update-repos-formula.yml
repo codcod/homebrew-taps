@@ -22,20 +22,42 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Download and calculate SHA256
+      - name: Download and calculate main SHA256
         id: calculate-sha
         run: |
           VERSION="${{ github.event.inputs.version }}"
-          # Ensure version starts with 'v'
+          # Ensure version starts with 'v' for the tag
           if [[ ! "$VERSION" =~ ^v ]]; then
             VERSION="v${VERSION}"
           fi
-          URL="https://github.com/codcod/repos/releases/download/${VERSION}/repos-${VERSION}-universal-apple-darwin.tar.gz"
+          
+          # Remove 'v' prefix for the filename
+          VERSION_NO_V="${VERSION#v}"
+          
+          URL="https://github.com/codcod/repos/releases/download/${VERSION}/repos-${VERSION_NO_V}-universal-apple-darwin.tar.gz"
           
           echo "Downloading ${URL}"
-          curl -L "${URL}" -o repos.tar.gz
+          
+          # Download with error checking
+          if ! curl -L "${URL}" -o repos.tar.gz -f; then
+            echo "❌ Failed to download release ${VERSION}"
+            echo "❌ URL: ${URL}"
+            echo "❌ This release may not exist. Please check:"
+            echo "   https://github.com/codcod/repos/releases"
+            exit 1
+          fi
+          
+          # Check file size (should be more than 100 bytes for a real binary)
+          FILE_SIZE=$(stat -c%s repos.tar.gz)
+          if [ "$FILE_SIZE" -lt 100 ]; then
+            echo "❌ Downloaded file is too small (${FILE_SIZE} bytes)"
+            echo "❌ This suggests the release doesn't exist or the URL is incorrect"
+            echo "❌ URL: ${URL}"
+            exit 1
+          fi
           
           SHA256=$(shasum -a 256 repos.tar.gz | cut -d' ' -f1)
+          echo "✅ Successfully downloaded ${FILE_SIZE} bytes"
           echo "SHA256: ${SHA256}"
           
           echo "url=${URL}" >> $GITHUB_OUTPUT
