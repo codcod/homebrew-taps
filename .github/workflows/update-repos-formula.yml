@@ -21,6 +21,10 @@ jobs:
         id: calculate-sha
         run: |
           VERSION="${{ github.event.inputs.version }}"
+          # Ensure version starts with 'v'
+          if [[ ! "$VERSION" =~ ^v ]]; then
+            VERSION="v${VERSION}"
+          fi
           URL="https://github.com/codcod/repos/releases/download/${VERSION}/repos-${VERSION}-universal-apple-darwin.tar.gz"
           
           echo "Downloading ${URL}"
@@ -38,6 +42,11 @@ jobs:
           URL="${{ steps.calculate-sha.outputs.url }}"
           SHA256="${{ steps.calculate-sha.outputs.sha256 }}"
           VERSION="${{ steps.calculate-sha.outputs.version }}"
+          
+          # Debug: Show current directory and files
+          echo "Current directory: $(pwd)"
+          echo "Files in directory:"
+          ls -la
           
           # Update the URL line
           sed -i "s|url \".*\"|url \"${URL}\"|" Repos.rb
