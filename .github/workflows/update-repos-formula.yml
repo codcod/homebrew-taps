@@ -37,24 +37,19 @@ jobs:
           echo "sha256=${SHA256}" >> $GITHUB_OUTPUT
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Update Repos.rb formula
+      - name: Update repos.rb formula
         run: |
           URL="${{ steps.calculate-sha.outputs.url }}"
           SHA256="${{ steps.calculate-sha.outputs.sha256 }}"
           VERSION="${{ steps.calculate-sha.outputs.version }}"
           
-          # Debug: Show current directory and files
-          echo "Current directory: $(pwd)"
-          echo "Files in directory:"
-          ls -la
-          
           # Update the URL line
-          sed -i "s|url \".*\"|url \"${URL}\"|" Repos.rb
+          sed -i "s|url \".*\"|url \"${URL}\"|" repos.rb
           
           # Update the SHA256 line
-          sed -i "s|sha256 \".*\"|sha256 \"${SHA256}\"|" Repos.rb
+          sed -i "s|sha256 \".*\"|sha256 \"${SHA256}\"|" repos.rb
           
-          echo "Updated Repos.rb with:"
+          echo "Updated repos.rb with:"
           echo "  URL: ${URL}"
           echo "  SHA256: ${SHA256}"
 
@@ -66,7 +61,7 @@ jobs:
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           
           # Audit the formula
-          brew audit --strict --formula ./Repos.rb
+          brew audit --strict --formula ./repos.rb
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
