@@ -63,20 +63,33 @@ jobs:
           echo "Formula syntax is valid"
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "Update repos formula to ${{ steps.calculate-sha.outputs.version }}"
-          title: "Update repos formula to ${{ steps.calculate-sha.outputs.version }}"
-          body: |
-            This PR updates the repos formula to version `${{ steps.calculate-sha.outputs.version }}`.
-            
-            Changes:
-            - Updated URL to: `${{ steps.calculate-sha.outputs.url }}`
-            - Updated SHA256 to: `${{ steps.calculate-sha.outputs.sha256 }}`
-            
-            The formula has been validated with Ruby syntax check.
-          branch: update-repos-${{ steps.calculate-sha.outputs.version }}
-          delete-branch: true
-          add-paths: |
-            repos.rb
+        run: |
+          # Configure git
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Create and switch to new branch
+          BRANCH_NAME="update-repos-${{ steps.calculate-sha.outputs.version }}"
+          git checkout -b "$BRANCH_NAME"
+          
+          # Add and commit changes
+          git add repos.rb
+          git commit -m "Update repos formula to ${{ steps.calculate-sha.outputs.version }}"
+          
+          # Push the branch
+          git push origin "$BRANCH_NAME"
+          
+          # Create pull request using GitHub CLI
+          gh pr create \
+            --title "Update repos formula to ${{ steps.calculate-sha.outputs.version }}" \
+            --body "This PR updates the repos formula to version \`${{ steps.calculate-sha.outputs.version }}\`.
+
+          Changes:
+          - Updated URL to: \`${{ steps.calculate-sha.outputs.url }}\`
+          - Updated SHA256 to: \`${{ steps.calculate-sha.outputs.sha256 }}\`
+          
+          The formula has been validated with Ruby syntax check." \
+            --head "$BRANCH_NAME" \
+            --base main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
