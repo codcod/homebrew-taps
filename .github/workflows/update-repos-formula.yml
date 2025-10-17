@@ -16,6 +16,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Download and calculate SHA256
         id: calculate-sha
@@ -65,15 +66,17 @@ jobs:
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "Update Repos formula to ${{ steps.calculate-sha.outputs.version }}"
-          title: "Update Repos formula to ${{ steps.calculate-sha.outputs.version }}"
+          commit-message: "Update repos formula to ${{ steps.calculate-sha.outputs.version }}"
+          title: "Update repos formula to ${{ steps.calculate-sha.outputs.version }}"
           body: |
-            This PR updates the Repos formula to version `${{ steps.calculate-sha.outputs.version }}`.
+            This PR updates the repos formula to version `${{ steps.calculate-sha.outputs.version }}`.
             
             Changes:
             - Updated URL to: `${{ steps.calculate-sha.outputs.url }}`
             - Updated SHA256 to: `${{ steps.calculate-sha.outputs.sha256 }}`
             
-            The formula has been validated with `brew audit`.
+            The formula has been validated with Ruby syntax check.
           branch: update-repos-${{ steps.calculate-sha.outputs.version }}
           delete-branch: true
+          add-paths: |
+            repos.rb
