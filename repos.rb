@@ -1,8 +1,8 @@
 class Repos < Formula
   desc "Clone multiple GitHub repositories and run arbitrary commands inside them."
   homepage "https://github.com/codcod/repos"
-  url "https://github.com/codcod/repos/releases/download/v0.0.10/repos-0.0.10-universal-apple-darwin.tar.gz"
-  sha256 "d8dc878f2d7bb1c9a47db350c3a17bb17d965ad663c60fb4fa90555c52beb3f4"
+  url "https://github.com/codcod/repos/releases/download/v0.0.11/repos-0.0.11-universal-apple-darwin.tar.gz"
+  sha256 "782330164101e6cafbf373b6ac3a5dad8aca5b29d1fae8362cb8c6b187ccf994"
   license "MIT"
 
   def install
