@@ -7,6 +7,13 @@ class Repos < Formula
 
   def install
     bin.install "repos"
+
+    # Install plugins
+    resources.each do |r|
+      r.stage do
+        bin.install r.name
+      end
+    end
   end
 
   test do

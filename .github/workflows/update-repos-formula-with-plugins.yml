@@ -1,0 +1,281 @@
+name: Update Repos Formula
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g., v0.0.6)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-formula:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Download and calculate main SHA256
+        id: calculate-sha
+        run: |
+          VERSION="${{ github.event.inputs.version }}"
+          # Ensure version starts with 'v' for the tag
+          if [[ ! "$VERSION" =~ ^v ]]; then
+            VERSION="v${VERSION}"
+          fi
+
+          # Remove 'v' prefix for the filename
+          VERSION_NO_V="${VERSION#v}"
+
+          URL="https://github.com/codcod/repos/releases/download/${VERSION}/repos-${VERSION_NO_V}-universal-apple-darwin.tar.gz"
+
+          echo "Downloading ${URL}"
+
+          # Download with error checking
+          if ! curl -L "${URL}" -o repos.tar.gz -f; then
+            echo "❌ Failed to download release ${VERSION}"
+            echo "❌ URL: ${URL}"
+            echo "❌ This release may not exist. Please check:"
+            echo "   https://github.com/codcod/repos/releases"
+            exit 1
+          fi
+
+          # Check file size (should be more than 100 bytes for a real binary)
+          FILE_SIZE=$(stat -c%s repos.tar.gz)
+          if [ "$FILE_SIZE" -lt 100 ]; then
+            echo "❌ Downloaded file is too small (${FILE_SIZE} bytes)"
+            echo "❌ This suggests the release doesn't exist or the URL is incorrect"
+            echo "❌ URL: ${URL}"
+            exit 1
+          fi
+
+          SHA256=$(shasum -a 256 repos.tar.gz | cut -d' ' -f1)
+          echo "✅ Successfully downloaded ${FILE_SIZE} bytes"
+          echo "SHA256: ${SHA256}"
+
+          echo "url=${URL}" >> $GITHUB_OUTPUT
+          echo "sha256=${SHA256}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Discover and download plugins
+        id: plugins
+        run: |
+          VERSION="${{ steps.calculate-sha.outputs.version }}"
+          VERSION_NO_V="${VERSION#v}"
+
+          # Get list of release assets
+          echo "🔍 Discovering plugins for release ${VERSION}..."
+          ASSETS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/codcod/repos/releases/tags/${VERSION}" | \
+            jq -r '.assets[].name')
+
+          # Find plugin archives (repos-*-{version}-universal-apple-darwin.tar.gz, excluding main repos binary)
+          PLUGIN_NAMES=""
+          PLUGIN_DATA=""
+
+          for asset in $ASSETS; do
+            # Match pattern: repos-*-{version}-universal-apple-darwin.tar.gz
+            # Extract everything between "repos-" and "-${VERSION_NO_V}"
+            if [[ "$asset" =~ ^repos-(.+)-${VERSION_NO_V}-universal-apple-darwin\.tar\.gz$ ]]; then
+              PLUGIN_NAME="${BASH_REMATCH[1]}"
+
+              # Skip if the plugin name matches a version pattern (numbers and dots only)
+              # This ensures we skip the main binary like "repos-0.0.6-..."
+              if [[ "$PLUGIN_NAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                echo "⏭️  Skipping main binary: ${asset}"
+                continue
+              fi
+
+              PLUGIN_URL="https://github.com/codcod/repos/releases/download/${VERSION}/${asset}"
+
+              echo "📦 Found plugin: repos-${PLUGIN_NAME}"
+              echo "   URL: ${PLUGIN_URL}"
+
+              # Download plugin
+              if curl -L "${PLUGIN_URL}" -o "repos-${PLUGIN_NAME}.tar.gz" -f; then
+                # Calculate SHA256
+                PLUGIN_SHA256=$(shasum -a 256 "repos-${PLUGIN_NAME}.tar.gz" | cut -d' ' -f1)
+                PLUGIN_SIZE=$(stat -c%s "repos-${PLUGIN_NAME}.tar.gz")
+
+                echo "   ✅ Downloaded ${PLUGIN_SIZE} bytes"
+                echo "   SHA256: ${PLUGIN_SHA256}"
+
+                # Append to plugin list
+                if [[ -n "$PLUGIN_NAMES" ]]; then
+                  PLUGIN_NAMES="${PLUGIN_NAMES},"
+                fi
+                PLUGIN_NAMES="${PLUGIN_NAMES}${PLUGIN_NAME}"
+
+                # Store plugin data (name|url|sha256)
+                PLUGIN_DATA="${PLUGIN_DATA}${PLUGIN_NAME}|${PLUGIN_URL}|${PLUGIN_SHA256}"$'\n'
+              else
+                echo "   ⚠️  Failed to download plugin repos-${PLUGIN_NAME}, skipping..."
+              fi
+            fi
+          done
+
+          if [[ -z "$PLUGIN_NAMES" ]]; then
+            echo "ℹ️  No plugins found for this release"
+          else
+            echo ""
+            echo "✅ Found plugins: ${PLUGIN_NAMES}"
+          fi
+
+          # Save to output
+          echo "names=${PLUGIN_NAMES}" >> $GITHUB_OUTPUT
+          echo "data<<EOF" >> $GITHUB_OUTPUT
+          echo "${PLUGIN_DATA}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Update repos.rb formula
+        run: |
+          URL="${{ steps.calculate-sha.outputs.url }}"
+          SHA256="${{ steps.calculate-sha.outputs.sha256 }}"
+          VERSION="${{ steps.calculate-sha.outputs.version }}"
+          PLUGIN_DATA="${{ steps.plugins.outputs.data }}"
+
+          echo "Updating repos.rb formula..."
+
+          # Create a new formula file
+          cat > repos.rb << 'FORMULA_START'
+          class Repos < Formula
+            desc "Clone multiple GitHub repositories and run arbitrary commands inside them."
+            homepage "https://github.com/codcod/repos"
+            url "MAIN_URL"
+            sha256 "MAIN_SHA256"
+            license "MIT"
+          FORMULA_START
+
+          # Add plugin resources if any
+          if [[ -n "$PLUGIN_DATA" ]]; then
+            echo "" >> repos.rb
+            while IFS='|' read -r plugin_name plugin_url plugin_sha256; do
+              if [[ -n "$plugin_name" ]]; then
+                echo "  Adding plugin: repos-${plugin_name}"
+                cat >> repos.rb << RESOURCE_BLOCK
+
+            resource "repos-${plugin_name}" do
+              url "${plugin_url}"
+              sha256 "${plugin_sha256}"
+            end
+          RESOURCE_BLOCK
+              fi
+            done <<< "$PLUGIN_DATA"
+          fi
+
+          # Add install method
+          cat >> repos.rb << 'FORMULA_END'
+
+            def install
+              bin.install "repos"
+
+              # Install plugins
+              resources.each do |r|
+                r.stage do
+                  bin.install r.name
+                end
+              end
+            end
+
+            test do
+              system "bin/repos", "--version"
+            end
+          end
+          FORMULA_END
+
+          # Replace placeholders
+          sed -i "s|MAIN_URL|${URL}|" repos.rb
+          sed -i "s|MAIN_SHA256|${SHA256}|" repos.rb
+
+          echo "✅ Formula updated successfully"
+          echo ""
+          echo "Updated repos.rb with:"
+          echo "  URL: ${URL}"
+          echo "  SHA256: ${SHA256}"
+
+          if [[ -n "$PLUGIN_DATA" ]]; then
+            echo "  Plugins:"
+            while IFS='|' read -r plugin_name plugin_url plugin_sha256; do
+              if [[ -n "$plugin_name" ]]; then
+                echo "    - repos-${plugin_name}"
+              fi
+            done <<< "$PLUGIN_DATA"
+          fi
+
+      - name: Verify formula syntax
+        run: |
+          echo "Verifying formula syntax..."
+          ruby -c repos.rb
+          echo "✅ Formula syntax is valid"
+
+      - name: Create branch and push changes
+        run: |
+          # Configure git
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Create branch name
+          BRANCH_NAME="update-repos-${{ steps.calculate-sha.outputs.version }}"
+
+          # Delete branch if it exists locally
+          git branch -D "$BRANCH_NAME" 2>/dev/null || true
+
+          # Delete branch if it exists remotely
+          git push origin --delete "$BRANCH_NAME" 2>/dev/null || true
+
+          # Create and switch to new branch
+          git checkout -b "$BRANCH_NAME"
+
+          # Add and commit changes
+          git add repos.rb
+          git commit -m "Update repos formula to ${{ steps.calculate-sha.outputs.version }}"
+
+          # Push the branch (force push to handle any conflicts)
+          git push --force origin "$BRANCH_NAME"
+
+          echo "✅ Branch pushed successfully!"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Pull Request
+        run: |
+          BRANCH_NAME="update-repos-${{ steps.calculate-sha.outputs.version }}"
+          PLUGIN_NAMES="${{ steps.plugins.outputs.names }}"
+
+          # Build PR body
+          PR_BODY="This PR updates the repos formula to version \`${{ steps.calculate-sha.outputs.version }}\`.
+
+          ## Changes
+          - **Updated URL to:** \`${{ steps.calculate-sha.outputs.url }}\`
+          - **Updated SHA256 to:** \`${{ steps.calculate-sha.outputs.sha256 }}\`"
+
+          # Add plugins section if any plugins were found
+          if [[ -n "$PLUGIN_NAMES" ]]; then
+            PR_BODY="${PR_BODY}
+          - **Plugins included:** \`${PLUGIN_NAMES}\`"
+          fi
+
+          PR_BODY="${PR_BODY}
+
+          The formula has been validated with Ruby syntax check.
+
+          **Auto-generated by GitHub Actions** 🤖"
+
+          # Create PR
+          gh pr create \
+            --title "Update repos formula to ${{ steps.calculate-sha.outputs.version }}" \
+            --body "$PR_BODY" \
+            --head "$BRANCH_NAME" \
+            --base main
+
+          echo "✅ Pull request created successfully!"
+          echo "🔗 View at: https://github.com/codcod/homebrew-taps/pulls"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
