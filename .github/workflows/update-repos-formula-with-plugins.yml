@@ -1,4 +1,4 @@
-name: Update Repos Formula
+name: Update Repos Formula With Plugins
 
 on:
   workflow_dispatch:
