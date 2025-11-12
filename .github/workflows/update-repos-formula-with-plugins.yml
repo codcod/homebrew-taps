@@ -34,7 +34,7 @@ jobs:
           # Remove 'v' prefix for the filename
           VERSION_NO_V="${VERSION#v}"
 
-          URL="https://github.com/codcod/repos/releases/download/${VERSION}/repos-${VERSION_NO_V}-universal-apple-darwin.tar.gz"
+          URL="https://github.com/codcod/repos/releases/download/${VERSION}/repos-${VERSION_NO_V}-macos-universal.tar.gz"
 
           echo "Downloading ${URL}"
 
@@ -76,14 +76,14 @@ jobs:
             "https://api.github.com/repos/codcod/repos/releases/tags/${VERSION}" | \
             jq -r '.assets[].name')
 
-          # Find plugin archives (repos-*-{version}-universal-apple-darwin.tar.gz, excluding main repos binary)
+          # Find plugin archives (repos-*-{version}-macos-universal.tar.gz, excluding main repos binary)
           PLUGIN_NAMES=""
           PLUGIN_DATA=""
 
           for asset in $ASSETS; do
-            # Match pattern: repos-*-{version}-universal-apple-darwin.tar.gz
+            # Match pattern: repos-*-{version}-macos-universal.tar.gz
             # Extract everything between "repos-" and "-${VERSION_NO_V}"
-            if [[ "$asset" =~ ^repos-(.+)-${VERSION_NO_V}-universal-apple-darwin\.tar\.gz$ ]]; then
+            if [[ "$asset" =~ ^repos-(.+)-${VERSION_NO_V}-macos-universal\.tar\.gz$ ]]; then
               PLUGIN_NAME="${BASH_REMATCH[1]}"
 
               # Skip if the plugin name matches a version pattern (numbers and dots only)
