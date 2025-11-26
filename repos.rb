@@ -1,19 +1,19 @@
 class Repos < Formula
   desc "Clone multiple GitHub repositories and run arbitrary commands inside them."
   homepage "https://github.com/codcod/repos"
-  url "https://github.com/codcod/repos/releases/download/v0.2.0/repos-0.2.0-macos-universal.tar.gz"
-  sha256 "9507f99581e2b26aae6f7536882f9d2aecc3e456b68a8d2e2b57db7de755ad67"
+  url "https://github.com/codcod/repos/releases/download/v0.2.1/repos-0.2.1-macos-universal.tar.gz"
+  sha256 "eee68bb48d8674ac328ec231ab508a4a857569543e50593d527e5146a39824a6"
   license "MIT"
 
 
   resource "repos-health" do
-    url "https://github.com/codcod/repos/releases/download/v0.2.0/repos-health-0.2.0-macos-universal.tar.gz"
-    sha256 "064f57fd37ed54cea2b5b46c053a95f42b6feaed4f01b9c57d9b16ad52f483b9"
+    url "https://github.com/codcod/repos/releases/download/v0.2.1/repos-health-0.2.1-macos-universal.tar.gz"
+    sha256 "4d35b5bacbb5a6ec81a63c6915aa6b4aa43b8da71f24dc26d2a1238fde8f15c2"
   end
 
   resource "repos-validate" do
-    url "https://github.com/codcod/repos/releases/download/v0.2.0/repos-validate-0.2.0-macos-universal.tar.gz"
-    sha256 "47333eb0046e98814a032264d71b9f8cdaba0c4328ff7a5c4f33ce1b2694e624"
+    url "https://github.com/codcod/repos/releases/download/v0.2.1/repos-validate-0.2.1-macos-universal.tar.gz"
+    sha256 "46450b220eb37ad5054216e9f1339f5febc124163ae87fec92da77d7b51fab41"
   end
 
   def install
