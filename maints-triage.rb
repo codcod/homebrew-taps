@@ -1,8 +1,8 @@
 class MaintsTriage < Formula
   desc "CLI tool for triaging and managing maintenance issues."
   homepage "https://github.com/codcod/maints-triage"
-  url "https://github.com/codcod/maints-triage/releases/download/v0.1.0/triage-v0.1.0-darwin-universal.tar.gz"
-  sha256 "0f26d93b77666f14de55b3f2a8235f3a6f4a4b694afa36d965ed55358ff3f76e"
+  url "https://github.com/codcod/maints-triage/releases/download/v0.2.0/triage-v0.2.0-darwin-universal.tar.gz"
+  sha256 "be3d2561d75c7ee62b58142e976add0acb1ad844ff6cce7404602c35ee4a86ea"
   license "MIT"
 
   def install
