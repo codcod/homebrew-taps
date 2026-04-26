@@ -1,10 +1,10 @@
-name: Update Maints-Triage Formula
+name: Update Maints Formula
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Release version (e.g., v0.1.0)'
+        description: 'Release version (e.g., v0.5.0)'
         required: true
         type: string
 
@@ -31,21 +31,22 @@ jobs:
             VERSION="v${VERSION}"
           fi
 
-          URL="https://github.com/codcod/maints-triage/releases/download/${VERSION}/triage-${VERSION}-darwin-universal.tar.gz"
+          # Release assets still use the triage-* tarball name
+          URL="https://github.com/codcod/maints/releases/download/${VERSION}/triage-${VERSION}-darwin-universal.tar.gz"
 
           echo "Downloading ${URL}"
 
           # Download with error checking
-          if ! curl -L "${URL}" -o triage.tar.gz -f; then
+          if ! curl -L "${URL}" -o maints.tar.gz -f; then
             echo "❌ Failed to download release ${VERSION}"
             echo "❌ URL: ${URL}"
             echo "❌ This release may not exist. Please check:"
-            echo "   https://github.com/codcod/maints-triage/releases"
+            echo "   https://github.com/codcod/maints/releases"
             exit 1
           fi
 
           # Check file size (should be more than 100 bytes for a real binary)
-          FILE_SIZE=$(stat -c%s triage.tar.gz)
+          FILE_SIZE=$(stat -c%s maints.tar.gz)
           if [ "$FILE_SIZE" -lt 100 ]; then
             echo "❌ Downloaded file is too small (${FILE_SIZE} bytes)"
             echo "❌ This suggests the release doesn't exist or the URL is incorrect"
@@ -53,7 +54,7 @@ jobs:
             exit 1
           fi
 
-          SHA256=$(shasum -a 256 triage.tar.gz | cut -d' ' -f1)
+          SHA256=$(shasum -a 256 maints.tar.gz | cut -d' ' -f1)
           echo "✅ Successfully downloaded ${FILE_SIZE} bytes"
           echo "SHA256: ${SHA256}"
 
@@ -61,25 +62,25 @@ jobs:
           echo "sha256=${SHA256}" >> $GITHUB_OUTPUT
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Update maints-triage.rb formula
+      - name: Update maints.rb formula
         run: |
           URL="${{ steps.calculate-sha.outputs.url }}"
           SHA256="${{ steps.calculate-sha.outputs.sha256 }}"
 
           # Update the URL line
-          sed -i "s|url \".*\"|url \"${URL}\"|" maints-triage.rb
+          sed -i "s|url \".*\"|url \"${URL}\"|" maints.rb
 
           # Update the SHA256 line
-          sed -i "s|sha256 \".*\"|sha256 \"${SHA256}\"|" maints-triage.rb
+          sed -i "s|sha256 \".*\"|sha256 \"${SHA256}\"|" maints.rb
 
-          echo "Updated maints-triage.rb with:"
+          echo "Updated maints.rb with:"
           echo "  URL: ${URL}"
           echo "  SHA256: ${SHA256}"
 
       - name: Verify formula syntax
         run: |
           # Simple Ruby syntax check
-          ruby -c maints-triage.rb
+          ruby -c maints.rb
 
           echo "Formula syntax is valid"
 
@@ -90,7 +91,7 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
           # Create branch name
-          BRANCH_NAME="update-maints-triage-${{ steps.calculate-sha.outputs.version }}"
+          BRANCH_NAME="update-maints-${{ steps.calculate-sha.outputs.version }}"
 
           # Delete branch if it exists locally
           git branch -D "$BRANCH_NAME" 2>/dev/null || true
@@ -102,8 +103,8 @@ jobs:
           git checkout -b "$BRANCH_NAME"
 
           # Add and commit changes
-          git add maints-triage.rb
-          git commit -m "Update maints-triage formula to ${{ steps.calculate-sha.outputs.version }}"
+          git add maints.rb
+          git commit -m "Update maints formula to ${{ steps.calculate-sha.outputs.version }}"
 
           # Push the branch (force push to handle any conflicts)
           git push --force origin "$BRANCH_NAME"
@@ -114,11 +115,11 @@ jobs:
 
       - name: Create Pull Request
         run: |
-          BRANCH_NAME="update-maints-triage-${{ steps.calculate-sha.outputs.version }}"
+          BRANCH_NAME="update-maints-${{ steps.calculate-sha.outputs.version }}"
 
           gh pr create \
-            --title "Update maints-triage formula to ${{ steps.calculate-sha.outputs.version }}" \
-            --body "This PR updates the maints-triage formula to version \`${{ steps.calculate-sha.outputs.version }}\`.
+            --title "Update maints formula to ${{ steps.calculate-sha.outputs.version }}" \
+            --body "This PR updates the maints formula to version \`${{ steps.calculate-sha.outputs.version }}\`.
 
           ## Changes
           - **Updated URL to:** \`${{ steps.calculate-sha.outputs.url }}\`
