@@ -6,7 +6,7 @@ class Maints < Formula
   license "MIT"
 
   def install
-    bin.install "triage" => "maints"
+    bin.install "maints"
   end
 
   test do
