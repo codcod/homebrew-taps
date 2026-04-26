@@ -31,8 +31,8 @@ jobs:
             VERSION="v${VERSION}"
           fi
 
-          # Release assets still use the triage-* tarball name
-          URL="https://github.com/codcod/maints/releases/download/${VERSION}/triage-${VERSION}-darwin-universal.tar.gz"
+          # Release assets still use the maints-* tarball name
+          URL="https://github.com/codcod/maints/releases/download/${VERSION}/maints-${VERSION}-darwin-universal.tar.gz"
 
           echo "Downloading ${URL}"
 
