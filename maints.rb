@@ -1,8 +1,8 @@
 class Maints < Formula
   desc "CLI tool for triaging and managing maintenance issues."
   homepage "https://github.com/codcod/maints"
-  url "https://github.com/codcod/maints/releases/download/v0.6.1/maints-v0.6.1-darwin-universal.tar.gz"
-  sha256 "ba18a93dc42f8a290a923d8d7e2a896279d0de1baf464525fee93ed746be9661"
+  url "https://github.com/codcod/maints/releases/download/v0.6.3/maints-v0.6.3-darwin-universal.tar.gz"
+  sha256 "1955ebb26b869e3b78d140552fbce6b07c34c5c3803b3a453e3742cd659c0283"
   license "MIT"
 
   def install
